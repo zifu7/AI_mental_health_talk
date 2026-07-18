@@ -1,0 +1,306 @@
+/* 全局主题切换 */
+/* 亮色主题（默认） */
+:root {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --text-secondary: #666666;
+  --border-color: #e0e0e0;
+  --card-bg: #ffffff;
+  --sidebar-bg: #f5f5f5;
+  --header-bg: #ffffff;
+  --primary-color: #409eff;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+
+  /* 图表相关 */
+  --chart-bg: #ffffff;
+  --chart-text-color: #333;
+  --chart-axis-color: #ccc;
+  --knowledge-bg-gradient: linear-gradient(135deg, #fafbfc 0%, #f7f9fc 50%, #f2f6fa 100%);
+  --navbar-bg: #ffffff;
+  --navbar-text: #1f2937;
+  --navbar-border: #e5e7eb;
+  --card-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  --card-shadow-hover: 0 6px 20px rgba(0, 0, 0, 0.08);
+  --input-bg: #f9fafb;
+  --hover-bg: #f8f9ff;
+  --active-bg: #e6f0ff;
+  --active-border: #4096ff;
+  --session-item-bg: #ffffff;
+  --session-item-hover: #f8f9ff;
+  --session-item-active: #e6f0ff;
+  --message-user-bg: #e8f4fd;
+  --message-ai-bg: #f0f9f0;
+  --emotion-garden-bg: linear-gradient(135deg, #fef9e7 0%, #fcf4e6 50%, #f6f0e8 100%);
+  --emotion-card-bg: #f9fafb;
+  --emotion-card-border: #e5e7eb;
+  --emotion-card-selected-bg: #f0fdf4;
+  --emotion-card-selected-border: #7ed321;
+  --tag-bg: #e1f3d8;
+  --tag-color: #67c23a;
+  --tag-border: #b3d8a4;
+  /* 编辑器 */
+  --editor-bg: #ffffff;
+  --editor-toolbar-bg: #f9fafb;
+  --editor-toolbar-hover-bg: #e5e7eb;
+  --editor-toolbar-active-bg: #eaf2ff;
+  --editor-toolbar-active-color: #2563eb;
+  --editor-footer-bg: #f9fafb;
+  --editor-panel-bg: #ffffff;
+  --editor-panel-hover-bg: #f8f9fa;
+  --editor-panel-selected-bg: #e3f2fd;
+  --editor-panel-selected-color: #4A90E2;
+
+  /* Markdown */
+  --markdown-blockquote-bg: #f9fafb;
+  --markdown-code-bg: #f3f4f6;
+  --markdown-pre-bg: #1f2937;
+
+  /* 布局 */
+  --main-bg: #f0f2f5;
+  --content-bg: #ffffff;
+  --page-header-title: #2d4738;
+
+  /* 前端布局 */
+  --frontend-navbar-bg: #ffffff;
+  --frontend-navbar-text: #4b5563;
+  --frontend-navbar-hover: #4A90E2;
+
+  /* 其他 */
+  --cover-placeholder-bg: #f6f8fa;
+  --cover-placeholder-color: #8b949e;
+}
+
+/* 暗色主题 */
+[data-theme="dark"] {
+  /* ========== 你自己的变量（保持原样） ========== */
+  --bg-color: #141414;
+  --text-color: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #333333;
+  --card-bg: #1f1f1f;
+  --sidebar-bg: #1a1a1a;
+  --header-bg: #1f1f1f;
+  --primary-color: #409eff;
+  --success-color: #67c23a;
+  --warning-color: #e6a23c;
+  --danger-color: #f56c6c;
+  --chart-bg: #1f1f1f;
+  --chart-text-color: #e0e0e0;
+  --chart-axis-color: #555;
+  --knowledge-bg-gradient: linear-gradient(135deg, #1e1e1e 0%, #252525 50%, #1a1a1a 100%);
+  --navbar-bg: #1f1f1f;
+  --navbar-text: #e0e0e0;
+  --navbar-border: #333333;
+  --card-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --main-bg: #141414;
+  --content-bg: #1f1f1f;
+  --page-header-title: #e0e0e0;
+  --editor-bg: #1f1f1f;
+  --editor-toolbar-bg: #1a1a1a;
+  --editor-toolbar-hover-bg: #2a2a2a;
+  --editor-toolbar-active-bg: #1e3a5f;
+  --editor-toolbar-active-color: #409eff;
+  --editor-footer-bg: #1a1a1a;
+  --editor-panel-bg: #1f1f1f;
+  --editor-panel-hover-bg: #2a2a2a;
+  --editor-panel-selected-bg: #1e3a5f;
+  --editor-panel-selected-color: #409eff;
+  --markdown-blockquote-bg: #1a1a1a;
+  --markdown-code-bg: #2a2a2a;
+  --markdown-pre-bg: #0d0d0d;
+  --frontend-navbar-bg: #1f1f1f;
+  --frontend-navbar-text: #a0a0a0;
+  --frontend-navbar-hover: #409eff;
+  --cover-placeholder-bg: #1f1f1f;
+  --cover-placeholder-color: #a0a0a0;
+  --emotion-card-bg: #1f1f1f;
+  --emotion-card-border: #333;
+  --emotion-card-selected-bg: #1a3a1a;
+  --emotion-garden-bg: linear-gradient(135deg, #2a241a 0%, #2a2218 50%, #221e18 100%);
+  --message-user-bg: #1e3a5f;
+  --message-ai-bg: #1a3a1a;
+  --tag-bg: #1a3a1a;
+  --tag-color: #67c23a;
+  --tag-border: #2a5a2a;
+
+  /* ========== Element Plus 暗色变量（全覆盖） ========== */
+  /* 基础背景与文字 */
+  --el-bg-color: #141414;
+  --el-bg-color-overlay: #1d1e1f;
+  --el-text-color-primary: #e5eaf3;
+  --el-text-color-regular: #cfd3dc;
+  --el-text-color-secondary: #a3a6ad;
+  --el-text-color-placeholder: #8d9095;
+  --el-border-color: #363637;
+  --el-border-color-light: #363637;
+  --el-border-color-lighter: #363637;
+  --el-border-color-extra-light: #363637;
+  --el-fill-color: #262727;
+  --el-fill-color-light: #262727;
+  --el-fill-color-lighter: #363637;
+  --el-fill-color-blank: transparent;
+
+  /* 按钮 */
+  --el-button-bg-color: #262727;
+  --el-button-border-color: #363637;
+  --el-button-text-color: #cfd3dc;
+  --el-button-hover-bg-color: #2d2d2d;
+  --el-button-hover-border-color: #4d4d4d;
+  --el-button-active-bg-color: #1d1d1d;
+
+  /* 输入框 */
+  --el-input-bg-color: #1d1e1f;
+  --el-input-border-color: #363637;
+  --el-input-hover-border-color: #4d4d4d;
+  --el-input-focus-border-color: #409eff;
+  --el-input-placeholder-color: #8d9095;
+
+  /* 卡片 */
+  --el-card-bg-color: #1f1f1f;
+  --el-card-border-color: #363637;
+
+  /* 菜单 */
+  --el-menu-bg-color: #1a1a1a;
+  --el-menu-text-color: #cfd3dc;
+  --el-menu-hover-bg-color: #2d2d2d;
+  --el-menu-active-color: #409eff;
+
+  /* 表格 */
+  --el-table-bg-color: #1f1f1f;
+  --el-table-header-bg-color: #262727;
+  --el-table-row-hover-bg-color: #2d2d2d;
+  --el-table-border-color: #363637;
+  --el-table-text-color: #cfd3dc;
+
+  /* 下拉框 */
+  --el-select-bg-color: #1d1e1f;
+  --el-select-border-color: #363637;
+  --el-select-hover-border-color: #4d4d4d;
+
+  /* 对话框 */
+  --el-dialog-bg-color: #1f1f1f;
+  --el-dialog-title-color: #e5eaf3;
+
+  /* 开关 */
+  --el-switch-off-color: #4d4d4d;
+
+  /* 分页 */
+  --el-pagination-bg-color: #1f1f1f;
+  --el-pagination-text-color: #cfd3dc;
+  --el-pagination-button-bg-color: #262727;
+  --el-pagination-button-disabled-bg-color: #1d1d1d;
+}
+
+html,
+body,
+div,
+span,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+abbr,
+address,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+samp,
+small,
+strong,
+sub,
+sup,
+var,
+b,
+i,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  /* font-size:100%; */
+  vertical-align: baseline;
+  background: transparent;
+}
+
+a {
+  text-decoration: none;
+}
+
+li {
+  list-style: none;
+}
+
+body {
+  height: 100vh;
+  background-color: var(--main-bg);
+}
+
+#app {
+  height: 100%;
+}
+
+.el-header {
+  height: 50px !important;
+  padding: 0 !important;
+  box-shadow: 0px 1px 1px rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid transparent;
+}
+
+.pagination-info {
+  padding: 10px 0;
+  background-color: var(--card-bg);
+
+  .el-pagination {
+    justify-content: end;
+  }
+}
