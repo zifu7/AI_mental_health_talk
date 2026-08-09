@@ -47,13 +47,15 @@ services:
       start_period: 20s
 
   frontend:
-    build:
-      context: ./frontend
-      args:
-        VITE_FILE_BASE_URL: ${VITE_FILE_BASE_URL:-}
+    # 低配服务器（2G 内存）上 vite 构建易内存不足，改为本地构建 dist 后挂载；
+    # 如需服务器端构建，可改回 build: {context: ./frontend}
+    image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
       - "${PORT:-80}:80"
+    volumes:
+      - ./frontend/dist:/usr/share/nginx/html:ro
+      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
       backend:
         condition: service_healthy
