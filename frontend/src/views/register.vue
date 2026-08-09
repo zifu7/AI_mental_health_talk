@@ -27,14 +27,14 @@
             size="large"
           ></el-input>
         </el-form-item>
-        <el-form-item label="昵称" prop="nickname">
+        <el-form-item label="昵称（选填）" prop="nickname">
           <el-input
             v-model="formData.nickname"
-            placeholder="请输入昵称"
+            placeholder="请输入昵称（不填则默认使用用户名）"
             size="large"
           ></el-input>
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
+        <el-form-item label="手机号（选填）" prop="phone">
           <el-input
             v-model="formData.phone"
             placeholder="请输入手机号"

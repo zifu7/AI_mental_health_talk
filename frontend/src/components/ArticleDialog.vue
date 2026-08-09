@@ -207,9 +207,17 @@ const beforeUpload = (file) => {
   }
   return true;
 };
+// crypto.randomUUID 仅在安全上下文（HTTPS/localhost）可用；
+// 生产环境走 http://IP 访问时需降级生成业务 ID，否则上传会静默失败
+const genBusinessId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 12);
+};
 const handleUploadRequest = async ({ file }) => {
   //这里的file没写{}就报错了。。。。  http-request要写解构赋值，否则会报    错，因为file是一个对象，而不是一个文件
-  businessId.value = crypto.randomUUID();
+  businessId.value = genBusinessId();
   const fileRes = await uploadFile(file, businessId.value);
   //地址拼接
   imgUrl.value = fileBaseUrl + fileRes.filePath;

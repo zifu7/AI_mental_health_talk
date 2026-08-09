@@ -4,7 +4,7 @@ from typing import Optional
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=50)
     email: EmailStr
-    nickname: str = Field(..., min_length=1, max_length=50)
+    nickname: Optional[str] = Field(None, max_length=50)  # 选填，不填时用用户名兜底
     phone: Optional[str] = Field(None, max_length=20)
     password: str = Field(..., min_length=6, max_length=100)
     gender: Optional[int] = 0

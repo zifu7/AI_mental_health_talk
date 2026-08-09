@@ -17,7 +17,8 @@ async def create_user(db: AsyncSession, user_data: UserRegister) -> User:
     db_user = User(        # 创建 User 对象
         username=user_data.username,
         email=user_data.email,
-        nickname=user_data.nickname,
+        # 昵称选填，留空时用用户名兜底（数据库列 NOT NULL 不能存空串）
+        nickname=user_data.nickname or user_data.username,
         phone=user_data.phone,
         password_hash=hashed,
         gender=user_data.gender or 0,
