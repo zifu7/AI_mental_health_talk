@@ -1,4 +1,5 @@
 import json
+import logging
 import httpx
 import asyncio
 import re
@@ -6,6 +7,8 @@ from typing import AsyncGenerator, List, Dict, Any
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.services import chat_service
+
+logger = logging.getLogger(__name__)
 
 # 模拟模式开关（True=使用模拟回复，不消耗 API）
 USE_MOCK = False   # 有真实 API Key 时改为 False
@@ -59,6 +62,7 @@ async def stream_deepseek(session_id: int, user_message: str, db: AsyncSession) 
                         if data_str == "[DONE]":
                             # 保存 AI 完整回复
                             await chat_service.add_message(db, session_id, sender_type=2, content=full_content)
+
                             # 触发情绪分析
                             await trigger_emotion_analysis(db, session_id)
                             # 发送完成事件
@@ -94,7 +98,7 @@ async def trigger_emotion_analysis(db: AsyncSession, session_id: int):
         # 4. 存储结果
         await chat_service.update_session_emotion(db, session_id, analysis)
     except Exception as e:
-        print(f"❌ 情绪分析失败: {e}")
+        logger.exception("情绪分析失败, session_id=%s: %s", session_id, e)
 
 
 async def analyze_session_emotion(messages: List[Dict[str, str]]) -> Dict[str, Any]:

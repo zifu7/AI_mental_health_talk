@@ -14,7 +14,11 @@
         </template>
       </el-table-column>
       <el-table-column prop="messageCount" label="消息数" width="100" />
-      <el-table-column prop="lastMessageTime" label="时间" width="100" />
+      <el-table-column label="时间" width="120">
+        <template #default="scope">
+          {{ formatRelativeTime(scope.row.lastMessageTime) }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="100">
         <template #default="scope">
           <el-button type="primary" text @click="viewSessionDetail(scope.row)"
@@ -86,6 +90,7 @@
 import PageHeader from "@/components/PageHeader.vue";
 import { onMounted, ref, reactive } from "vue";
 import { getConsultations, getSessionDetail } from "@/api/admin";
+import { formatRelativeTime } from "@/utils/relativeTime";
 
 const tableData = ref([]);
 const pagination = reactive({

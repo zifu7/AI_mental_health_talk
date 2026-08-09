@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, JSON,Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -15,3 +15,7 @@ class ChatSession(Base):
     message_count = Column(Integer, default=0)
     duration_minutes = Column(Integer, default=0)  # 可以计算，也可以留空
     emotion_analysis = Column(JSON, nullable=True)
+
+    __table_args__ = (
+    Index('idx_chat_sessions_started_at_user_id', 'started_at', 'user_id'),
+)

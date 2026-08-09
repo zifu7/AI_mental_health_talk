@@ -24,7 +24,7 @@
             <h4>{{ item.title }}</h4>
             <p class="read-count">
               <el-icon><Histogram /></el-icon>
-              阅读量：{{ item.read_count }}
+              阅读量：{{ item.readCount }}
             </p>
           </div>
         </div>
@@ -39,7 +39,7 @@
         >
           <el-image
             style="width: 240px; height: 150px"
-            :src="getImage(item.cover_image)"
+            :src="getImage(item.coverImage)"
             alt="文章封面"
           />
           <div class="info">
@@ -112,12 +112,12 @@ const getPageList = () => {
     // 字段映射：将下划线转为驼峰
     const records = (res.records || []).map((item) => ({
       ...item,
-      categoryName: item.category_name,
-      authorName: item.author_name,
-      readCount: item.read_count,
-      updatedAt: item.updated_at,
-      createdAt: item.created_at,
-      coverImage: item.cover_image, // 可选，因为 getImage 已兼容
+      categoryName: item.categoryName || item.category_name,
+      authorName: item.authorName || item.author_name,
+      readCount: item.readCount ?? item.read_count,
+      updatedAt: item.updatedAt || item.updated_at,
+      createdAt: item.createdAt || item.created_at,
+      coverImage: item.coverImage || item.cover_image,
       tagArray: item.tagArray || [],
     }));
     articleList.value = records;
@@ -149,7 +149,7 @@ onMounted(() => {
   };
   getPageList();
   getKnowledgeList(params).then((res) => {
-    recommendList.value = res.records;
+    recommendList.value = (res.records || []).map((item) => ({ ...item, readCount: item.readCount ?? item.read_count }));
   });
 });
 </script>

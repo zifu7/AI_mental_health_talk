@@ -1,15 +1,17 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, List
-from app.core.database import get_db          # 需确保 get_db 返回 AsyncSession
+import logging
+
+from app.core.database import get_db
 from app.core.dependencies import get_current_user
 from app.models.users import User
 from app.schemas.common import ResponseModel
 from app.schemas.article import ArticleCreate, ArticleUpdate, ArticleResponse
-from app.schemas.category import CategoryTreeItem
 from app.services import category_service, article_service
 from app.utils.file_upload import save_upload_file
-import os
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/knowledge", tags=["知识文章"])
 
@@ -18,7 +20,6 @@ router = APIRouter(prefix="/knowledge", tags=["知识文章"])
 async def get_category_tree(db: AsyncSession = Depends(get_db)):
     tree = await category_service.get_category_tree(db)   # 异步调用
     return ResponseModel(data=tree)
-
 
 # ---------- 文章 ----------
 @router.get("/article/page", response_model=ResponseModel)
@@ -31,7 +32,7 @@ async def get_article_page(
     sortField: str = Query("created_at", alias="sortField"),
     sortDirection: str = Query("desc", alias="sortDirection"),
     db: AsyncSession = Depends(get_db),
-    # current_user: User = Depends(get_current_user)   # 若需要权限可放开
+    #  current_user: User = Depends(get_current_user)   # 若需要权限可放开
 ):
     try:
         total, articles = await article_service.get_articles(
@@ -40,7 +41,7 @@ async def get_article_page(
         result = []
         if articles:
             for art in articles:
-                # 注意：由于使用了 selectinload，关联对象已加载，可以直接访问
+                # 由于使用了 selectinload，关联对象已加载，可以直接访问
                 art_dict = ArticleResponse.model_validate(art).model_dump(by_alias=True)
                 art_dict["tagArray"] = art.tags.split(",") if art.tags else []
                 art_dict["category_name"] = art.category.category_name if art.category else None
@@ -53,9 +54,7 @@ async def get_article_page(
             "size": size
         })
     except Exception as e:
-        # 生产环境建议记录日志，不要直接暴露异常
-        import traceback
-        traceback.print_exc()
+        logger.exception("获取文章列表失败: %s", e)
         return ResponseModel(code="500", message=str(e), data=None)
 
 
@@ -63,7 +62,6 @@ async def get_article_page(
 async def get_article_detail(
     id: int,
     db: AsyncSession = Depends(get_db),
-    # current_user: User = Depends(get_current_user)   # 可选
 ):
     article = await article_service.get_article_by_id(db, id)
     if not article:
@@ -86,9 +84,8 @@ async def create_article(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    #这里可以不写吧？前端已经做了权限控制
-    # if current_user.user_type != 2:
-    #     raise HTTPException(status_code=403, detail="权限不足")
+    if current_user.user_type != 2:
+        raise HTTPException(status_code=403, detail="权限不足")
     new_article = await article_service.create_article(db, article_data, current_user.id)
     return ResponseModel(data={"id": new_article.id})
 

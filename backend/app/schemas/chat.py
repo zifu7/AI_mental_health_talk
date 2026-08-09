@@ -62,6 +62,5 @@ class EmotionAnalysisResponse(BaseModel):
 class StreamRequest(BaseModel):
     session_id: str = Field(..., alias="sessionId")
     user_message_text: str = Field(..., alias="userMessageText")
-
     class Config:
         populate_by_name = True

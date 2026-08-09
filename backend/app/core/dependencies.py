@@ -4,7 +4,6 @@ from app.core.security import decode_access_token
 from app.core.database import AsyncSessionLocal
 from app.models.users import User
 from sqlalchemy import select
-
 security = HTTPBearer()
 
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):

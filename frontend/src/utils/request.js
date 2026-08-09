@@ -6,7 +6,7 @@ const service = axios.create({
   timeout: 5000,
 });
 
-// 请求拦截器（已正确）
+// 请求拦截器
 service.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -37,17 +37,27 @@ service.interceptors.response.use(
         return Promise.reject("网络请求失败");
       }
     }
-    return Promise.reject(data.msg);
+    return Promise.reject(data.message || "请求失败");
   },
   (error) => {
-    // 新增：处理 HTTP 401
-    if (error.response && error.response.status === 401) {
-      if (!window.location.pathname.includes("/auth/login")) {
-        ElMessage.error("登录已过期，请重新登录");
-        localStorage.removeItem("token");
-        localStorage.removeItem("userInfo");
-        window.location.href = "/auth/login";
+    // 处理 HTTP 错误
+    if (error.response) {
+      const { status, data } = error.response;
+      const msg = data?.detail || data?.message || "请求失败";
+      if (status === 401) {
+        if (!window.location.pathname.includes("/auth/login")) {
+          ElMessage.error(msg);
+          localStorage.removeItem("token");
+          localStorage.removeItem("userInfo");
+          window.location.href = "/auth/login";
+        } else {
+          ElMessage.error(msg);
+        }
+      } else {
+        ElMessage.error(msg);
       }
+    } else {
+      ElMessage.error("网络连接失败，请检查网络");
     }
     return Promise.reject(error);
   },

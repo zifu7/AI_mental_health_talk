@@ -101,7 +101,11 @@
               <div class="session-title">
                 <span>{{ session.sessionTitle }}</span>
                 <div class="session-meta">
-                  <span class="session-time">{{ session.startedAt }}</span>
+                  <span class="session-time">{{
+                    formatRelativeTime(
+                      session.lastMessageTime || session.startedAt,
+                    )
+                  }}</span>
                 </div>
                 <div class="session-preview">
                   {{ session.lastMessageContent }}
@@ -276,6 +280,7 @@ import {
 } from "@/api/frontend";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import MarkdownRenderer from "@/components/MarkdownRenderer.vue";
+import { formatRelativeTime } from "@/utils/relativeTime";
 
 const iconUrl1 = new URL("@/assets/images/1.png", import.meta.url).href;
 const iconUrl2 = new URL("@/assets/images/2.png", import.meta.url).href;
@@ -438,7 +443,7 @@ const startAIResponse = async (sessionId, userMessage) => {
     },
     body: JSON.stringify({
       sessionId,
-      userMessageText: userMessage, // ← 改成 userMessageText
+      userMessageText: userMessage,
     }),
     signal: ctrl.signal,
     onopen: (response) => {
@@ -459,6 +464,7 @@ const startAIResponse = async (sessionId, userMessage) => {
         ctrl.abort();
         // 流结束后获取情绪分析
         getEmotionAnalysisData(currentSession.value.sessionId);
+        getSessionPage();
         return;
       }
 

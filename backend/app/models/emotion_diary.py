@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, SmallInteger, Date, DateTime, JSON, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, SmallInteger, Date, DateTime, JSON, ForeignKey,Index
 from sqlalchemy.sql import func
 from app.core.database import Base
 
@@ -17,3 +17,7 @@ class EmotionDiary(Base):
     ai_emotion_analysis = Column(JSON, nullable=True)    # 存储AI分析结果
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+    Index('idx_emotion_diaries_created_at_user_id','created_at', 'user_id'),
+    )

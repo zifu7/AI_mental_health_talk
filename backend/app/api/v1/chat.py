@@ -16,10 +16,23 @@ from app.schemas.chat import (
 from app.services import chat_service
 from app.utils.ai_client import stream_deepseek
 import json
+import math
 from sqlalchemy import select
 
 router = APIRouter(prefix="/psychological-chat", tags=["心理咨询"])
 
+
+def _duration_minutes(started_at, last_message_at):
+    if not started_at or not last_message_at:
+        return 0
+    try:
+        return max(math.ceil((last_message_at - started_at).total_seconds() / 60), 1)
+    except TypeError:
+        if started_at.tzinfo and not last_message_at.tzinfo:
+            last_message_at = last_message_at.replace(tzinfo=started_at.tzinfo)
+        elif last_message_at.tzinfo and not started_at.tzinfo:
+            started_at = started_at.replace(tzinfo=last_message_at.tzinfo)
+        return max(math.ceil((last_message_at - started_at).total_seconds() / 60), 1)
 
 # ---------- 创建会话 ----------
 @router.post("/session/start", response_model=ResponseModel)
@@ -65,6 +78,7 @@ async def get_session_list(
         user_result = await db.execute(user_stmt)
         user = user_result.scalar_one_or_none()
         last_msg = await chat_service.get_last_message(db, s.id)
+        duration_minutes = _duration_minutes(s.started_at, last_msg.created_at if last_msg else None)
         records.append({
             "id": s.id,
             "userNickname": user.nickname if user else "未知用户",
@@ -73,7 +87,7 @@ async def get_session_list(
             "lastMessageContent": last_msg.content if last_msg else "",
             "lastMessageTime": s.last_message_at.isoformat() if s.last_message_at else "",
             "messageCount": s.message_count,
-            "durationMinutes": 0
+            "durationMinutes": duration_minutes
         })
     return ResponseModel(data={
         "records": records,

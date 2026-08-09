@@ -1,0 +1,10 @@
+node_modules
+dist
+.vscode
+.env
+.env.*
+*.log
+repomix-output.xml
+.git
+.gitignore
+README.md

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
+import logging
 from app.core.database import get_db
 from app.schemas.user import UserRegister, UserLogin, LoginResponse
 from app.schemas.common import ResponseModel
@@ -24,7 +25,7 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         )
     new_user = await user_service.create_user(db, user_data)
     user_info = user_service.build_user_info(new_user)   # 同步方法，无需 await
-    return ResponseModel(data=user_info.dict())
+    return ResponseModel(data=user_info)
 
 @router.post("/login", response_model=ResponseModel)
 async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
@@ -35,11 +36,13 @@ async def login(login_data: UserLogin, db: AsyncSession = Depends(get_db)):
         token = create_access_token(data={"sub": str(user.id), "user_type": user.user_type})
         user_info = user_service.build_user_info(user)
         login_resp = LoginResponse(token=token, userInfo=user_info)
-        return ResponseModel(data=login_resp.dict())
+        return ResponseModel(data=login_resp.model_dump())
+    except HTTPException:
+        raise  # 让 FastAPI 正常处理 HTTP 异常（401/400 等）
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return ResponseModel(code="500", message=str(e), data=None)
+        logging.exception("用户登录失败, username=%s", login_data.username)
+        return ResponseModel(code="500", message=f"登录失败: {str(e)}", data=None)
+
 @router.post("/logout", response_model=ResponseModel)
 async def logout():
     return ResponseModel(message="退出登录成功")

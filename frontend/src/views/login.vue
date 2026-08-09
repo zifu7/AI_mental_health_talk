@@ -86,11 +86,12 @@ const submitForm = async (formEl) => {
       router.push("/");
     }
   } catch (error) {
-    // 任何错误（表单验证失败、网络错误、后端返回非 200 等）都会来到这里
     console.error("登录过程出错", error);
-    // 注意：如果你的响应拦截器已经弹出了错误提示，这里可以不重复弹
-    // 否则可以统一提示：
-    // ElMessage.error(error.message || '登录失败')
+    // 响应拦截器已处理大部分错误提示，这里兜底
+    const msg = typeof error === "string" ? error : error?.message;
+    if (msg) {
+      ElMessage.error(msg);
+    }
   }
 };
 </script>
