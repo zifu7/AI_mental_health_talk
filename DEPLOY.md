@@ -72,7 +72,7 @@ ssh root@服务器IP
 然后克隆仓库：
 
 ```bash
-git clone https://github.com/zifu7/vite-project.git
+git clone https://github.com/zifu7/AI_mental_health_talk.git
 cd vite-project
 ```
 
