@@ -129,6 +129,15 @@ async def analyze_session_emotion(messages: List[Dict[str, str]]) -> Dict[str, A
 """
     messages_for_ai = [{"role": "system", "content": system_prompt}] + messages
 
+    payload = {
+        "model": "deepseek-chat",
+        "messages": messages_for_ai,
+        "temperature": 0.3,
+        "stream": False,
+        # JSON 模式：让接口层保证返回值是合法 JSON，比"模型自愿输出 JSON + 正则抠"可靠得多
+        "response_format": {"type": "json_object"},
+    }
+
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.post(
             f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
@@ -136,20 +145,99 @@ async def analyze_session_emotion(messages: List[Dict[str, str]]) -> Dict[str, A
                 "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
                 "Content-Type": "application/json"
             },
-            json={
-                "model": "deepseek-chat",
-                "messages": messages_for_ai,
-                "temperature": 0.3,
-                "stream": False
-            }
+            json=payload
         )
+        # 兼容不支持 response_format 的 OpenAI 兼容端（部分中转服务会直接 400）：
+        # 摘掉该参数重试一次，而不是让整条情绪分析链路挂掉。
+        if response.status_code == 400:
+            logger.warning("response_format 被拒绝(400)，降级为普通模式重试: %s", response.text[:200])
+            payload.pop("response_format", None)
+            response = await client.post(
+                f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                    "Content-Type": "application/json"
+                },
+                json=payload
+            )
         if response.status_code != 200:
             raise Exception(f"AI 分析失败: {response.status_code}")
 
-        result = response.json()
-        content = result["choices"][0]["message"]["content"]
-        # 提取 JSON
+        content = response.json()["choices"][0]["message"]["content"]
+        return _parse_analysis_json(content)
+
+
+def _parse_analysis_json(content: str) -> Dict[str, Any]:
+    """解析情绪分析结果。
+
+    首选直接 json.loads——开了 json_object 模式后返回值就是纯 JSON。
+    兜底再用正则抠第一个 {...}：服务端不支持 JSON 模式时，模型可能把 JSON
+    裹在 ``` 代码块或解释文字里，正则能救回来。
+    """
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
         json_match = re.search(r'\{.*\}', content, re.DOTALL)
         if not json_match:
             raise Exception("AI 返回格式异常")
         return json.loads(json_match.group())
+
+
+async def stream_knowledge_qa(
+    session_id: int,
+    user_message: str,
+    db: AsyncSession,
+    contexts: List[Dict[str, Any]],
+) -> AsyncGenerator[str, None]:
+    """知识库问答（RAG）流式回复
+
+    和 stream_deepseek 的区别：
+      1. system prompt 换成检索资料拼成的提示词（带引用编号规则）
+      2. 结束时在回答末尾追加"参考资料"列表，随内容一起存库
+      3. 不触发情绪分析（这是知识问答，不是情绪倾诉）
+    """
+    from app.services.rag import build_prompt, format_citations
+
+    messages = [
+        {"role": "system", "content": build_prompt(user_message, contexts)},
+        {"role": "user", "content": user_message},
+    ]
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        async with client.stream(
+            "POST",
+            f"{settings.DEEPSEEK_BASE_URL}/chat/completions",
+            headers={
+                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                "Content-Type": "application/json",
+            },
+            json={"model": "deepseek-chat", "messages": messages, "stream": True},
+        ) as response:
+            if response.status_code != 200:
+                yield f"event: error\ndata: {json.dumps({'message': f'AI服务异常: {response.status_code}'})}\n\n"
+                return
+
+            full_content = ""
+            async for line in response.aiter_lines():
+                if not line.startswith("data: "):
+                    continue
+                data_str = line[6:]
+                if data_str == "[DONE]":
+                    # 先拼参考资料再存库（客户端中途断开也不丢完整内容）
+                    citations_text = format_citations(contexts)
+                    full_content += citations_text
+                    await chat_service.add_message(db, session_id, sender_type=2, content=full_content)
+                    # 参考资料作为普通内容片段推给前端
+                    for i in range(0, len(citations_text), 50):
+                        yield f"data: {json.dumps({'code': 200, 'data': {'content': citations_text[i:i + 50]}})}\n\n"
+                    yield f"event: done\ndata: {json.dumps({'content': full_content})}\n\n"
+                    break
+                try:
+                    chunk = json.loads(data_str)
+                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                    content = delta.get("content", "")
+                    if content:
+                        full_content += content
+                        yield f"data: {json.dumps({'code': 200, 'data': {'content': content}})}\n\n"
+                except json.JSONDecodeError:
+                    continue
