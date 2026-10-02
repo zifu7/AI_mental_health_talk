@@ -14,8 +14,10 @@ from app.schemas.chat import (
     StreamRequest
 )
 from app.services import chat_service
-from app.utils.ai_client import stream_deepseek
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 import math
 from sqlalchemy import select
 
@@ -184,7 +186,14 @@ async def stream_chat(
 
     # 返回流式响应
     from fastapi.responses import StreamingResponse
+
+    # 统一走 Agent 引擎：小暖自己决定调什么工具（情绪日记 / 知识库检索）。
+    # 手动"知识库问答"开关已退休——模型的路由比一个开关更聪明：
+    # 知识类问题它自己会检索，情绪倾诉它自己会直接共情。
+    from app.services.agent import make_stream_agent
+    stream_agent = make_stream_agent(db, current_user.id)
     return StreamingResponse(
-        stream_deepseek(session.id, req.user_message_text, db),
-        media_type="text/event-stream"
+        stream_agent(session.id, req.user_message_text),
+        media_type="text/event-stream",
     )
+
