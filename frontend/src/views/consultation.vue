@@ -203,6 +203,22 @@
             />
           </div>
           <div class="message-content">
+            <!-- 工具执行轨迹：小暖调用工具时，把"正在干什么"亮给用户看 -->
+            <div
+              v-if="msg.senderType === 2 && msg.tools && msg.tools.length"
+              class="tool-trail"
+            >
+              <div
+                v-for="(tool, index) in msg.tools"
+                :key="index"
+                class="tool-chip"
+                :class="{ 'is-done': tool.done }"
+              >
+                <span class="tool-chip-dot"></span>
+                <span class="tool-chip-label">{{ tool.label }}</span>
+                <span v-if="tool.done" class="tool-chip-check">✓</span>
+              </div>
+            </div>
             <div class="message-bubble">
               <!-- AI正在思考中 -->
               <div
@@ -428,6 +444,7 @@ const startAIResponse = async (sessionId, userMessage) => {
     id: `ai-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     senderType: 2,
     content: "",
+    tools: [], // 工具执行轨迹（后端 event:tool 推送过来时往里塞）
     createdAt: new Date().toLocaleString(),
     isError: false,
   };
@@ -465,6 +482,34 @@ const startAIResponse = async (sessionId, userMessage) => {
         // 流结束后获取情绪分析
         getEmotionAnalysisData(currentSession.value.sessionId);
         getSessionPage();
+        return;
+      }
+
+      // 工具执行事件：data 里没有 code 字段，必须在下面的 code 检查【之前】拦下，
+      // 否则会被当成"AI回复失败"误报错。
+      if (eventName === "tool") {
+        try {
+          const info = JSON.parse(raw);
+          if (!aiMessage.tools) aiMessage.tools = [];
+          if (info.status === "running") {
+            aiMessage.tools.push({
+              name: info.name,
+              label: info.label,
+              done: false,
+            });
+          } else {
+            // done：从后往前找同名的未完成项（同一个工具一轮里可能被调多次）
+            for (let i = aiMessage.tools.length - 1; i >= 0; i--) {
+              const item = aiMessage.tools[i];
+              if (item.name === info.name && !item.done) {
+                item.done = true;
+                break;
+              }
+            }
+          }
+        } catch (err) {
+          console.warn("工具事件解析失败:", err);
+        }
         return;
       }
 
@@ -1014,6 +1059,43 @@ onMounted(() => {
         }
         .message-content {
           max-width: 70%;
+          .tool-trail {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 8px;
+            animation: fadeInUp 0.3s ease-out;
+            .tool-chip {
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              padding: 4px 10px;
+              border-radius: 12px;
+              font-size: 12px;
+              color: var(--text-secondary);
+              background: var(--session-item-bg);
+              border: 1px solid var(--border-color);
+              transition: all 0.3s ease;
+              .tool-chip-dot {
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: #fb923c;
+                animation: pulse 1.2s infinite;
+              }
+              .tool-chip-check {
+                color: var(--success-color);
+                font-weight: 700;
+              }
+              &.is-done {
+                opacity: 0.6;
+                .tool-chip-dot {
+                  background: var(--success-color);
+                  animation: none;
+                }
+              }
+            }
+          }
           .message-bubble {
             background: var(--card-bg);
             border-radius: 16px;
