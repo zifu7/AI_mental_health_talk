@@ -2,4 +2,17 @@
 node_modules
 dist
 repomix-output.xml
+
+# 个人文档：求职材料与学习笔记，不属于项目本身，不进公开仓库
 学习总结.md
+*学习总结.md
+学习地图.md
+简历*.md
+课*-*.md
+
+# 本地草稿与残留副本
+backend/agent_demo.py
+backend/app/services/rag1.py
+
+# 评测缓存（首次运行会自动重新生成）
+backend/eval/results/query_vec_cache.json
