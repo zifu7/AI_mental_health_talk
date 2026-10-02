@@ -8,7 +8,8 @@ from app.core.dependencies import get_current_user
 from app.models.users import User
 from app.schemas.common import ResponseModel
 from app.schemas.article import ArticleCreate, ArticleUpdate, ArticleResponse
-from app.services import category_service, article_service
+from app.services import category_service, article_service, rag
+from app.services.retrieval import invalidate_index_cache
 from app.utils.file_upload import save_upload_file
 
 logger = logging.getLogger(__name__)
@@ -132,6 +133,25 @@ async def delete_article(
     if not deleted:
         raise HTTPException(status_code=404, detail="文章不存在")
     return ResponseModel(data=None)
+
+
+@router.post("/article/reindex", response_model=ResponseModel)
+async def rebuild_index(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """全量重建检索索引（管理员用）
+
+    日常的增删改文章会自动维护单篇索引，用不着调这个。
+    它用于两类场合：改了切分规则或换了 embedding 模型之后，以及
+    怀疑索引与文章对不上时（比如绕过应用直接改了库）。
+    """
+    if current_user.user_type != 2:
+        raise HTTPException(status_code=403, detail="权限不足")
+    total = await rag.build_index(db)
+    invalidate_index_cache()
+    logger.info("管理员(id=%s)触发全量重建索引：%d 个分块", current_user.id, total)
+    return ResponseModel(data={"chunks": total})
 
 
 # ---------- 文件上传 ----------

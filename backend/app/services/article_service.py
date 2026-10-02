@@ -7,6 +7,12 @@ from app.models.article import Article
 from app.models.users import User
 from app.models.category import Category
 from app.schemas.article import ArticleCreate, ArticleUpdate
+from app.services import rag
+from app.services.retrieval import invalidate_index_cache
+
+# 会进入检索索引的字段：标题以【】前缀形式参与检索，正文切分成块。
+# 改这两个之外的字段（封面、摘要、分类、标签）不影响切分结果，不必重建索引。
+INDEXED_FIELDS = {"title", "content"}
 
 
 async def get_articles(
@@ -109,6 +115,11 @@ async def update_article(
 
     await db.commit()
     await db.refresh(db_article)
+
+    # 改了标题或正文才重建索引：否则改个封面也要重跑一遍向量化，白花 embedding 额度
+    if INDEXED_FIELDS & update_data.keys():
+        await rag.index_article(db, db_article)
+        invalidate_index_cache()
     return db_article
 
 
@@ -129,6 +140,11 @@ async def change_article_status(
         db_article.published_at = datetime.now()
     await db.commit()
     await db.refresh(db_article)
+
+    # 发布 → 建索引；下线/退回草稿 → 清掉分块。
+    # 下线必须真的清干净：否则"已下线"的文章还会被检索到并作为引用发给模型。
+    await rag.index_article(db, db_article)
+    invalidate_index_cache()
     return db_article
 
 
@@ -139,6 +155,10 @@ async def delete_article(db: AsyncSession, article_id: int) -> bool:
     db_article = result.scalar_one_or_none()
     if not db_article:
         return False
+    # 顺序有讲究：必须先删分块再删文章。article_chunks.article_id 有外键指向文章
+    # 且未配级联删除，反过来做会被外键约束拦下。
+    await rag.clear_chunks(db, article_id)
     await db.delete(db_article)
     await db.commit()
+    invalidate_index_cache()
     return True

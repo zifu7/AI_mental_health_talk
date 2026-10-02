@@ -122,8 +122,41 @@ async def save_chunks(db: AsyncSession, article_id: int, chunks: List[str]) -> N
     await db.commit()
 
 
+async def clear_chunks(db: AsyncSession, article_id: int) -> None:
+    """清掉一篇文章的全部分块（文章下线或删除时用）"""
+    await db.execute(delete(ArticleChunk).where(ArticleChunk.article_id == article_id))
+    await db.commit()
+
+
 # 索引时是否把标题拼进每个分块——留成开关是为了做 A/B 对比（见 eval/run_eval.py）
 INCLUDE_TITLE_IN_CHUNK = True
+
+
+def prepare_chunks(article: Article) -> List[str]:
+    """切分 + 加标题前缀，得到"送去向量化的文本"
+
+    单独抽成函数，是为了让"全量重建"和"改单篇"走同一条路——
+    标题前缀的规则只能有一份，否则两处一改一漏就开始漂移。
+    """
+    chunks = chunk_text(article)
+    if INCLUDE_TITLE_IN_CHUNK:
+        chunks = [f"【{article.title}】{chunk}" for chunk in chunks]
+    return chunks
+
+
+async def index_article(db: AsyncSession, article: Article) -> int:
+    """按文章当前状态同步它的检索索引，返回分块数
+
+    只有已发布（status=1）的文章参与检索。草稿与已下线的走 clear_chunks——
+    这一步不能省：下线一篇已索引的文章后，它的分块若还留着，
+    照样会被检索到并作为引用发给模型，等于下线没生效。
+    """
+    if article.status != 1:
+        await clear_chunks(db, article.id)
+        return 0
+    chunks = prepare_chunks(article)
+    await save_chunks(db, article.id, chunks)
+    return len(chunks)
 
 
 async def build_index(db: AsyncSession) -> int:
@@ -139,12 +172,9 @@ async def build_index(db: AsyncSession) -> int:
     articles = await load_published_articles(db)
     total = 0
     for article in articles:
-        chunks = chunk_text(article)          # ← 调用你写的函数
-        if INCLUDE_TITLE_IN_CHUNK:
-            chunks = [f"【{article.title}】{chunk}" for chunk in chunks]
-        await save_chunks(db, article.id, chunks)
-        total += len(chunks)
-        logger.info("文章[%s]已切分 %d 段", article.title, len(chunks))
+        count = await index_article(db, article)
+        logger.info("文章[%s]已切分 %d 段", article.title, count)
+        total += count
     return total
 
 

@@ -12,6 +12,9 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
     pip install --no-cache-dir -r requirements.txt
 
 COPY app ./app
+# 一并带上评测目录：语料导入（python -m eval.seed_corpus）和检索评测都在这里，
+# 容器内可直接执行，不必在服务器上另建 Python 环境
+COPY eval ./eval
 RUN mkdir -p /app/uploads
 
 EXPOSE 8000

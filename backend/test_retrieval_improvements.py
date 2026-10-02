@@ -11,7 +11,7 @@ from unittest.mock import patch
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-from app.services import rag, retrieval
+from app.services import article_service, rag, retrieval
 from app.utils.ai_client import _parse_analysis_json
 
 PASS, FAIL = "✅", "❌"
@@ -152,11 +152,87 @@ async def test_threshold_refusal() -> None:
         check("阈值常量与评测报告一致（0.55）", retrieval.MIN_TOP1_COSINE == 0.55)
 
 
+# ==================== 5. 文章写路径的索引同步 ====================
+
+class FakeArticle:
+    def __init__(self, title: str, content: str, status: int = 1):
+        self.id = 7
+        self.title = title
+        self.content = content
+        self.status = status
+
+
+# 两段，每段都超过 chunk_text 的 20 字下限
+_ARTICLE = FakeArticle(
+    "失眠的缓解方法",
+    "失眠通常与压力、焦虑和作息紊乱有关，固定作息时间是最基础也最有效的办法。\n"
+    "焦虑时可以试试腹式呼吸，把注意力拉回到呼吸本身，通常几分钟就能平静下来。",
+)
+
+
+async def test_article_indexing() -> None:
+    # 已发布：切分并加上标题前缀
+    chunks = rag.prepare_chunks(_ARTICLE)
+    check("单篇索引：切成 2 段", len(chunks) == 2, f"实际 {len(chunks)} 段")
+    check("单篇索引：每段都带【标题】前缀",
+          all(c.startswith("【失眠的缓解方法】") for c in chunks))
+
+    # 走 index_article：已发布 → 写库；草稿/下线 → 清库
+    recorded = {}
+
+    async def fake_save(db, article_id, chunks_):
+        recorded["saved"] = (article_id, chunks_)
+
+    async def fake_clear(db, article_id):
+        recorded["cleared"] = article_id
+
+    with patch.object(rag, "save_chunks", fake_save), \
+         patch.object(rag, "clear_chunks", fake_clear):
+        n = await rag.index_article(None, _ARTICLE)
+        check("单篇索引：已发布写入分块", n == 2 and recorded.get("saved", (None, []))[0] == 7)
+
+        for bad_status in (0, 2):
+            recorded.clear()
+            n = await rag.index_article(None, FakeArticle("草稿", "内容" * 20, status=bad_status))
+            check(f"单篇索引：status={bad_status} 不建索引且清库",
+                  n == 0 and recorded.get("cleared") == 7 and "saved" not in recorded)
+
+
+async def test_delete_order() -> None:
+    """删文章必须先删分块——外键没有级联，顺序反了会被约束拦下"""
+    order = []
+
+    class FakeResult:
+        def scalar_one_or_none(self):
+            return _ARTICLE
+
+    class FakeSession:
+        async def execute(self, stmt):
+            return FakeResult()
+
+        async def delete(self, obj):
+            order.append("delete_article")
+
+        async def commit(self):
+            pass
+
+    async def fake_clear(db, article_id):
+        order.append("clear_chunks")
+
+    with patch.object(rag, "clear_chunks", fake_clear):
+        ok = await article_service.delete_article(FakeSession(), 7)
+
+    check("删文章：先清分块再删文章", ok and order == ["clear_chunks", "delete_article"],
+          f"实际顺序 {order}")
+
+
 async def main() -> None:
     test_parse_json()
     await test_embedding_cache()
     await test_index_cache()
     await test_threshold_refusal()
+    await test_article_indexing()
+    await test_delete_order()
     print()
     if failures:
         print(f"{FAIL} {len(failures)} 项未通过：{failures}")
