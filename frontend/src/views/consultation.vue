@@ -10,7 +10,7 @@
             style="width: 25px; height: 25px"
           />
         </div>
-        <h3 class="assistant-name">宁渡AI助手</h3>
+        <h3 class="assistant-name">小暖AI助手</h3>
         <div class="online-status">
           <div class="status-dot"></div>
           在线服务中
@@ -153,7 +153,7 @@
             />
           </div>
           <div class="chat-info">
-            <h2>宁渡AI助手</h2>
+            <h2>小暖AI助手</h2>
             <p>您的贴心AI心理健康助手</p>
           </div>
         </div>
@@ -175,7 +175,7 @@
           <div class="message-content">
             <div class="message-bubble">
               <p>
-                您好！我是小暖，您的心理健康心理健康助手。很高兴陪伴您，为您提供温暖的心理支持。今天您感觉怎么样？有什么要分享的吗？
+                您好！我是小暖，您的心理健康助手。很高兴陪伴您，为您提供温暖的心理支持。今天您感觉怎么样？有什么要分享的吗？
               </p>
             </div>
             <div class="message-time">刚刚</div>
@@ -406,7 +406,7 @@ const startNewSession = async (userMsg) => {
     initialMessage: userMsg,
   };
   if (currentSession.value.sessionTitle === "新会话") {
-    SessionParams.sessionTitle = `宁渡AI助手 - ${new Date().toLocaleString()}`;
+    SessionParams.sessionTitle = `小暖AI助手 - ${new Date().toLocaleString()}`;
   } else {
     SessionParams.sessionTitle = currentSession.value.sessionTitle;
   }
