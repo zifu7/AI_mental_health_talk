@@ -7,8 +7,11 @@ repomix-output.xml
 学习总结.md
 *学习总结.md
 学习地图.md
-简历*.md
 课*-*.md
+# 简历：不限扩展名。导出成 PDF / docx 后文件名往往不带「简历」二字
+# （如「AI全栈开发—谷润冰—可立刻到岗.pdf」），所以再用姓名兜一道
+简历*
+*谷润冰*
 
 # 本地草稿与残留副本
 backend/agent_demo.py
