@@ -192,7 +192,10 @@ onMounted(() => {
       border-radius: 12px;
       box-shadow: var(--card-shadow);
       padding: 15px;
-      height: 400px;
+      /* 高度随内容自适应：原来写死 400px，推荐 5 条时标题一换行就顶出边框。
+         align-self 不能省——.content 是 flex 行，默认 align-items: stretch，
+         去掉固定高度后会被拉伸到与右侧文章列表（10 条）等高，反而更长。 */
+      align-self: flex-start;
 
       .section-title {
         font-size: 12px;
